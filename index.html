@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QRコード一括生成ツール</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+    background: #f5f7fa;
+    color: #333;
+    line-height: 1.6;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  .subtitle {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+
+  .form-section {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    margin-bottom: 2rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.25rem;
+  }
+
+  .form-group:last-child {
+    margin-bottom: 0;
+  }
+
+  label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.4rem;
+  }
+
+  label .hint {
+    font-weight: 400;
+    color: #888;
+    font-size: 0.8rem;
+  }
+
+  input[type="text"], textarea {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: border-color 0.15s;
+  }
+
+  input[type="text"]:focus, textarea:focus {
+    outline: none;
+    border-color: #4f7df9;
+    box-shadow: 0 0 0 3px rgba(79,125,249,0.15);
+  }
+
+  textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  .row {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .row .form-group {
+    flex: 1;
+  }
+
+  .actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  button {
+    padding: 0.65rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  button:active {
+    transform: scale(0.97);
+  }
+
+  .btn-primary {
+    background: #4f7df9;
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    background: #3a66e0;
+  }
+
+  .btn-secondary {
+    background: #e9ecef;
+    color: #333;
+  }
+
+  .btn-secondary:hover {
+    background: #dde0e4;
+  }
+
+  .btn-danger {
+    background: #fee;
+    color: #c00;
+  }
+
+  .btn-danger:hover {
+    background: #fdd;
+  }
+
+  #results {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .qr-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    text-align: center;
+  }
+
+  .qr-card canvas {
+    display: block;
+    margin: 0 auto 0.75rem;
+  }
+
+  .qr-card .qr-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    word-break: break-all;
+    margin-bottom: 0.3rem;
+  }
+
+  .qr-card .qr-url {
+    font-size: 0.75rem;
+    color: #888;
+    word-break: break-all;
+    margin-bottom: 0.75rem;
+  }
+
+  .qr-card .card-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  .qr-card .card-actions button {
+    padding: 0.35rem 0.8rem;
+    font-size: 0.8rem;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: #aaa;
+    padding: 3rem 1rem;
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: 600px) {
+    .row { flex-direction: column; gap: 0; }
+    #results { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>QRコード一括生成ツール</h1>
+  <p class="subtitle">ベースURLに日本語パラメータを付与し、QRコードを一括生成します</p>
+
+  <div class="form-section">
+    <div class="form-group">
+      <label>ベースURL <span class="hint">例: https://example.com/page</span></label>
+      <input type="text" id="baseUrl" placeholder="https://example.com/page" value="">
+    </div>
+
+    <div class="row">
+      <div class="form-group">
+        <label>パラメータ名 <span class="hint">例: q, name, keyword</span></label>
+        <input type="text" id="paramName" placeholder="q" value="q">
+      </div>
+      <div class="form-group">
+        <label>QRコードサイズ (px)</label>
+        <input type="text" id="qrSize" placeholder="256" value="256">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>パラメータ値リスト <span class="hint">1行に1つ。日本語OK</span></label>
+      <textarea id="values" placeholder="東京タワー&#10;富士山&#10;京都の寺院&#10;北海道ラーメン"></textarea>
+    </div>
+
+    <div class="actions">
+      <button class="btn-primary" onclick="generate()">QRコード生成</button>
+      <button class="btn-secondary" onclick="downloadAll()">一括ダウンロード (ZIP)</button>
+      <button class="btn-danger" onclick="clearResults()">クリア</button>
+    </div>
+  </div>
+
+  <div id="results">
+    <div class="empty-state">上のフォームに入力して「QRコード生成」を押してください</div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script>
+function buildUrl(base, paramName, value) {
+  const url = new URL(base);
+  url.searchParams.set(paramName, value);
+  return url.toString();
+}
+
+async function generate() {
+  const baseUrl = document.getElementById('baseUrl').value.trim();
+  const paramName = document.getElementById('paramName').value.trim() || 'q';
+  const size = parseInt(document.getElementById('qrSize').value, 10) || 256;
+  const raw = document.getElementById('values').value;
+  const values = raw.split('\n').map(s => s.trim()).filter(Boolean);
+
+  if (!baseUrl) {
+    alert('ベースURLを入力してください');
+    return;
+  }
+
+  try {
+    new URL(baseUrl);
+  } catch {
+    alert('有効なURLを入力してください');
+    return;
+  }
+
+  if (values.length === 0) {
+    alert('パラメータ値を1つ以上入力してください');
+    return;
+  }
+
+  const container = document.getElementById('results');
+  container.innerHTML = '';
+
+  for (const val of values) {
+    const fullUrl = buildUrl(baseUrl, paramName, val);
+
+    const card = document.createElement('div');
+    card.className = 'qr-card';
+
+    const canvas = document.createElement('canvas');
+    card.appendChild(canvas);
+
+    const labelEl = document.createElement('div');
+    labelEl.className = 'qr-label';
+    labelEl.textContent = val;
+    card.appendChild(labelEl);
+
+    const urlEl = document.createElement('div');
+    urlEl.className = 'qr-url';
+    urlEl.textContent = fullUrl;
+    card.appendChild(urlEl);
+
+    const cardActions = document.createElement('div');
+    cardActions.className = 'card-actions';
+
+    const dlBtn = document.createElement('button');
+    dlBtn.className = 'btn-secondary';
+    dlBtn.textContent = 'PNG保存';
+    dlBtn.addEventListener('click', () => downloadSingle(canvas, val));
+    cardActions.appendChild(dlBtn);
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn-secondary';
+    copyBtn.textContent = 'URL コピー';
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(fullUrl).then(() => {
+        copyBtn.textContent = 'コピー済';
+        setTimeout(() => copyBtn.textContent = 'URL コピー', 1500);
+      });
+    });
+    cardActions.appendChild(copyBtn);
+
+    card.appendChild(cardActions);
+    container.appendChild(card);
+
+    await QRCode.toCanvas(canvas, fullUrl, {
+      width: size,
+      margin: 2,
+      errorCorrectionLevel: 'M',
+    });
+  }
+}
+
+function downloadSingle(canvas, name) {
+  const a = document.createElement('a');
+  a.download = sanitizeFilename(name) + '.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+
+function sanitizeFilename(name) {
+  return name.replace(/[\\/:*?"<>|]/g, '_');
+}
+
+async function downloadAll() {
+  const cards = document.querySelectorAll('.qr-card');
+  if (cards.length === 0) {
+    alert('まずQRコードを生成してください');
+    return;
+  }
+
+  const zip = new JSZip();
+
+  cards.forEach((card, i) => {
+    const canvas = card.querySelector('canvas');
+    const label = card.querySelector('.qr-label').textContent;
+    const dataUrl = canvas.toDataURL('image/png');
+    const base64 = dataUrl.split(',')[1];
+    const filename = sanitizeFilename(label) + '.png';
+    zip.file(filename, base64, { base64: true });
+  });
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a');
+  a.download = 'qrcodes.zip';
+  a.href = URL.createObjectURL(blob);
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function clearResults() {
+  const container = document.getElementById('results');
+  container.innerHTML = '<div class="empty-state">上のフォームに入力して「QRコード生成」を押してください</div>';
+}
+</script>
+</body>
+</html>
